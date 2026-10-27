@@ -1,0 +1,3 @@
+- insert:
+    - id: split-view
+      name: 'dsh-session-split-view'
