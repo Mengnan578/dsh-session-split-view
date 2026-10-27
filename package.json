@@ -49,5 +49,13 @@
     "access": "public"
   },
   "license": "MIT",
-  "author": "dsh-session-split-view contributors"
+  "author": "dsh-session-split-view contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mengnan578/dsh-session-split-view.git"
+  },
+  "homepage": "https://github.com/Mengnan578/dsh-session-split-view#readme",
+  "bugs": {
+    "url": "https://github.com/Mengnan578/dsh-session-split-view/issues"
+  }
 }
