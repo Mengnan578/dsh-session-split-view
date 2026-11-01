@@ -1425,120 +1425,6 @@ window.__ModuleLoader__.load({
       };
     }
 
-    function createSidebarAction(ctx, store) {
-      return function SidebarSplitAction({ wide, useSessions, useWorkspaces, t }) {
-        const sessions = useSessions((value) => value);
-        const workspaces = useWorkspaces((value) => value);
-        const state = React.useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-        const buttonRef = React.useRef(null);
-        const [open, setOpen] = React.useState(false);
-        const [notice, setNotice] = React.useState(null);
-
-        const entries = Object.entries(sessions.byId ?? {});
-        const found = entries.find(([, row]) => (row?.retainedBy?.mainView ?? 0) > 0);
-        const mainId = found === undefined ? undefined : found[0];
-        const companions = state.companions.filter((id) => id !== mainId);
-        const openIds = React.useMemo(
-          () => new Set(mainId === undefined ? [] : [mainId, ...companions]),
-          [mainId, companions],
-        );
-
-        const close = React.useCallback(() => {
-          setOpen(false);
-          setNotice(null);
-        }, []);
-
-        React.useEffect(() => {
-          if (mainId === undefined && open) close();
-        }, [mainId, open, close]);
-
-        if (mainId === undefined) return null;
-
-        const handleClick = () => {
-          if (open) {
-            close();
-            return;
-          }
-          setNotice(null);
-          setOpen(true);
-        };
-
-        const handlePick = (id) => {
-          if (id === mainId) {
-            if (companions.length === 0) {
-              try {
-                ctx.layout.selectPanel(null);
-              } catch (error) {
-                console.warn('[split-view] could not show the conversation:', error);
-              }
-              close();
-              return;
-            }
-            store.setMode(true);
-            try {
-              ctx.layout.selectPanel(null);
-            } catch (error) {
-              console.warn('[split-view] could not show the conversation:', error);
-            }
-            close();
-            return;
-          }
-          if (state.companions.includes(id)) {
-            store.setMode(true);
-            try {
-              ctx.layout.selectPanel(null);
-            } catch (error) {
-              console.warn('[split-view] could not show the conversation:', error);
-            }
-            close();
-            return;
-          }
-          if (companions.length >= MAX_COMPANIONS) {
-            setNotice(t('panel.limit', { count: MAX_SESSIONS }));
-            return;
-          }
-          store.addCompanion(id);
-          store.setMode(true);
-          try {
-            ctx.layout.selectPanel(null);
-          } catch (error) {
-            console.warn('[split-view] could not show the conversation:', error);
-          }
-          close();
-        };
-
-        return h(
-          React.Fragment,
-          null,
-          h(
-            'button',
-            {
-              ref: buttonRef,
-              type: 'button',
-              className: 'dsv-iconbtn dsv-footer-action',
-              title: t('action.split'),
-              'aria-label': t('action.split'),
-              'aria-haspopup': 'dialog',
-              'aria-expanded': open ? 'true' : 'false',
-              onClick: handleClick,
-            },
-            h(IconSplit, { size: wide === true ? 16 : 18 }),
-          ),
-          h(AnchoredSessionPicker, {
-            open,
-            anchorRef: buttonRef,
-            onClose: close,
-            sessions,
-            workspaces,
-            t,
-            openIds,
-            onPick: handlePick,
-            notice,
-          }),
-        );
-      };
-    }
-
     function createRowAction(ctx, store) {
       function CurrentRowSplitAction({ sessionId, useSessions, useWorkspaces, t }) {
         const sessions = useSessions((value) => value);
@@ -1825,7 +1711,6 @@ window.__ModuleLoader__.load({
       const SplitConversation = createSplitConversation(ctx, store);
       const HeaderSplitAction = createHeaderAction(store);
       const RowSplitAction = createRowAction(ctx, store);
-      const SidebarSplitAction = createSidebarAction(ctx, store);
       const SplitViewMigration = createMigrationShim(ctx);
 
       // Split mode is a mode of the Conversation, not another main panel: the
@@ -1882,22 +1767,6 @@ window.__ModuleLoader__.load({
             ctx.slots.register({ name: 'split.conversation.pane', locale: NS }, SplitPane),
           ),
         'split-view: pane conversation',
-      );
-
-      ctx.effect(
-        () =>
-          ctx.slots.inject('sidebar.footer.action', () =>
-            ctx.slots.register(
-              {
-                name: 'sidebar.footer.action',
-                id: 'split-view',
-                order: 0,
-                locale: NS,
-              },
-              SidebarSplitAction,
-            ),
-          ),
-        'split-view: sidebar action',
       );
 
       ctx.effect(
